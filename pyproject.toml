@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "haru-dial-visual-control"
+version = "0.1.0"
+description = ""
+authors = ["Ahmed Shariff <shariff.mfa@outlook.com>"]
+readme = "README.md"
+packages = [{include = "haru_dial_visual_control"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
