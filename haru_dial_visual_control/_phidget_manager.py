@@ -1,6 +1,7 @@
 from loguru import logger
 from Phidget22.Devices.Encoder import Encoder
 from Phidget22.Devices.DigitalInput import DigitalInput
+import math
 
 __CALLBACKS__ = {}
 
@@ -11,7 +12,11 @@ def _on_position_change(self, positionChange, timeChange, indexTriggered):
     logger.debug("IndexTriggered: " + str(indexTriggered))
     logger.debug("getPosition: " + str(self.getPosition()))
     if "position" in __CALLBACKS__:
-        __CALLBACKS__["position"]()
+        if positionChange > 0:
+            pos = math.ceil(positionChange/10)
+        else:
+            pos = math.floor(positionChange/10)
+        __CALLBACKS__["position"](pos)
 
 
 def _on_attach(self):

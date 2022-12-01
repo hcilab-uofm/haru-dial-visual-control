@@ -17,9 +17,12 @@ def haru_expression_gui():
     """Launch expressions UI."""
 
     layout = [[sg.Text("Hello.")],
-              [sg.Image(background_color='white', size = (392,468), key="haru", right_click_menu=["unused", ["Quit", "Next"]])]]
+              [sg.pin(sg.Listbox(values=['Welcome Drink', 'Extra Cushions', 'Organic Diet','Blanket', 'Neck Rest'],
+                                 select_mode='extended', key='items', size=(30, 6), visible=False)),
+               sg.pin(sg.Image(background_color='white', size = (392,468), key="haru", right_click_menu=["unused", ["Quit", "Next"]]))]
+              ]
 
-    window = sg.Window("HAL 220").Layout(layout)
+    window = sg.Window("HARU Expressions", size=(530, 600)).Layout(layout)
     state = ExpressionsState(_IMAGE_SEQUENCE)
     sensor = PhidgetDialSensorManager()
     setup_callbacks(position=state.next_image, state=state.change_state)
@@ -32,10 +35,14 @@ def haru_expression_gui():
                 break
             elif event == sg.TIMEOUT_KEY:
                 if state.image_state:
+                    if not window["haru"].visible:
+                        window["haru"].update(visible=True)
+                        window["items"].update(visible=False)
                     data = state.frame_data()
                     window["haru"].update(data)
                 else:
-                    # TODO: What happens here?
+                    window["haru"].update(visible=False)
+                    window["items"].update(visible=True)
 
             elif event == "Next":
                 if state.image_state:
@@ -58,20 +65,26 @@ class ExpressionsState:
         self.frames = self.images[self.image_index].n_frames
 
         self.image_state = True
+        self.data = b''
 
-    def next_image(self):
+    def next_image(self, value=1):
         """Move to the next image."""
-        self.frame_index = 0
-        self.image_index = (self.image_index + 1) % len(self.images)
-        self.frames = self.images[self.image_index].n_frames
+        if self.image_state:
+            self.frame_index = 0
+            logger.debug(f"moving by {value}")
+            self.image_index = (self.image_index + value) % len(self.images)
+            self.frames = self.images[self.image_index].n_frames
 
     def frame_data(self):
         """Return the frame data."""
         image = self.images[self.image_index]
-        image.seek(self.frame_index)
-        data = _image_to_data(image)
+        try:
+            image.seek(self.frame_index)
+            self.data = _image_to_data(image)
+        except (EOFError, OSError):  # OSError: broken data stream when reading image file
+            pass
         self.frame_index = (self.frame_index + 1) % self.frames
-        return data
+        return self.data
 
     def change_state(self):
         self.image_state = not self.image_state
@@ -82,4 +95,4 @@ def _image_to_data(im):
     with BytesIO() as output:
         im.save(output, format="PNG")
         data = output.getvalue()
-    return data
+        return data
