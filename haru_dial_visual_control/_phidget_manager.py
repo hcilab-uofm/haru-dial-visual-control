@@ -30,7 +30,7 @@ def _on_error(self, code, description):
 
 def _on_state_change(self, state):
     logger.debug("State: " + str(state))
-    if "state" in __CALLBACKS__:
+    if state and "state" in __CALLBACKS__:
         __CALLBACKS__["state"]()
 
 

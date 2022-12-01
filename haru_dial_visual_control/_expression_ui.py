@@ -22,7 +22,7 @@ def haru_expression_gui():
     window = sg.Window("HAL 220").Layout(layout)
     state = ExpressionsState(_IMAGE_SEQUENCE)
     sensor = PhidgetDialSensorManager()
-    setup_callbacks(position=state.next_image)
+    setup_callbacks(position=state.next_image, state=state.change_state)
 
     try:
         while True:
@@ -31,12 +31,15 @@ def haru_expression_gui():
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 break
             elif event == sg.TIMEOUT_KEY:
-                data = state.frame_data()
-
-                window["haru"].update(data)
+                if state.image_state:
+                    data = state.frame_data()
+                    window["haru"].update(data)
+                else:
+                    # TODO: What happens here?
 
             elif event == "Next":
-                state.next_image()
+                if state.image_state:
+                    state.next_image()
     except:
         logger.exception("UI failed")
     finally:
@@ -54,6 +57,8 @@ class ExpressionsState:
         self.frame_index = 0
         self.frames = self.images[self.image_index].n_frames
 
+        self.image_state = True
+
     def next_image(self):
         """Move to the next image."""
         self.frame_index = 0
@@ -67,6 +72,9 @@ class ExpressionsState:
         data = _image_to_data(image)
         self.frame_index = (self.frame_index + 1) % self.frames
         return data
+
+    def change_state(self):
+        self.image_state = not self.image_state
 
 
 def _image_to_data(im):
