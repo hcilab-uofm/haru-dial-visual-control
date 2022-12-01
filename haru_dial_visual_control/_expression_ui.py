@@ -4,14 +4,15 @@ from pathlib import Path
 from PIL import Image
 from io import BytesIO
 from loguru import logger
+import pyttsx3
 from haru_dial_visual_control._phidget_manager import PhidgetDialSensorManager, setup_callbacks
 
-_IMAGE_SEQUENCE = ["1-Reward_Visual.gif",
-                   "2-tongue_sticking_out.gif",
-                   "3-heart_eyes.gif",
-                   "4-annoyance.gif",
-                   "5-anger.gif",
-                   "6-Infuriation.gif"]
+_IMAGE_SEQUENCE = {"1-Reward_Visual.gif": "Test one",
+                   "2-tongue_sticking_out.gif": "Test two",
+                   "3-heart_eyes.gif": "Test three",
+                   "4-annoyance.gif": "Test four",
+                   "5-anger.gif": "Test five",
+                   "6-Infuriation.gif": "Test six"}
 
 
 _MENU_ITEMS = {"Val 1": "saying one",
@@ -36,6 +37,9 @@ def haru_expression_gui():
     state = ExpressionsState(_IMAGE_SEQUENCE, _MENU_ITEMS)
     sensor = PhidgetDialSensorManager()
     setup_callbacks(position=state.next_value, state=state.change_state)
+    tts_engine = pyttsx3.init()
+
+    voices = tts_engine.getProperty('voices')
 
     try:
         while True:
@@ -60,6 +64,8 @@ def haru_expression_gui():
                 elif state.state == "menu":
                     # Ensure the correct elements is visible
                     if _state_changed and not window["items"].visible:
+                        tts_engine.say(state.images_data[state.image_index][1])
+                        tts_engine.runAndWait()
                         window["haru"].update(visible=False)
                         window["items"].update(visible=True)
                         window["final_text"].update(visible=False)
@@ -91,9 +97,10 @@ def haru_expression_gui():
 class ExpressionsState:
     """Class to maanger the state of the expression images."""
 
-    def __init__(self, images: List[str], menu_items: Dict[str, str]) -> None:
+    def __init__(self, images: Dict[str, str], menu_items: Dict[str, str]) -> None:
         """Setup the manager."""
-        self.images = [Image.open(Path(__file__).parent / "static"/ image_name) for image_name in images]
+        self.images_data = list(images.items())
+        self.images = [Image.open(Path(__file__).parent / "static"/ image_name) for image_name, _ in self.images_data]
         self.image_index = 0
         self.frame_index = 0
         self.frames = self.images[self.image_index].n_frames
