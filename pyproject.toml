@@ -8,8 +8,14 @@ packages = [{include = "haru_dial_visual_control"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+phidget22 = "^1.12.20220912"
+click = "^8.1.3"
+loguru = "^0.6.0"
 
+[tool.poetry.scripts]
+haru = "haru_dial_visual_control._cli:cli"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
