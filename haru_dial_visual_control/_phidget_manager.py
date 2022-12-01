@@ -2,13 +2,16 @@ from loguru import logger
 from Phidget22.Devices.Encoder import Encoder
 from Phidget22.Devices.DigitalInput import DigitalInput
 
+__CALLBACKS__ = {}
+
 
 def _on_position_change(self, positionChange, timeChange, indexTriggered):
     logger.debug("PositionChange: " + str(positionChange))
     logger.debug("TimeChange: " + str(timeChange))
     logger.debug("IndexTriggered: " + str(indexTriggered))
     logger.debug("getPosition: " + str(self.getPosition()))
-    logger.debug("----------")
+    if "position" in __CALLBACKS__:
+        __CALLBACKS__["position"]()
 
 
 def _on_attach(self):
@@ -20,13 +23,15 @@ def _on_detach(self):
 
 
 def _on_error(self, code, description):
-    logger.debug("Code: " + ErrorEventCode.getName(code))
+    logger.debug("Code: " + code)
     logger.debug("Description: " + str(description))
     logger.debug("----------")
 
 
 def _on_state_change(self, state):
     logger.debug("State: " + str(state))
+    if "state" in __CALLBACKS__:
+        __CALLBACKS__["state"]()
 
 
 class PhidgetDialSensorManager:
@@ -71,3 +76,15 @@ class PhidgetDialSensorManager:
             self.encoder0.close()
         if self.digitalInput0 is not None:
             self.digitalInput0.close()
+
+
+def setup_callbacks(**callbacks):
+    """
+    Set callbacks for the different events.
+
+    Expecting keyword arguments where the key is a callback name.
+    Currently working keys ["position", "state"].
+    Each callback function is a callable without parameters.
+    """
+    for key, callback in callbacks.items():
+        __CALLBACKS__[key] = callback
