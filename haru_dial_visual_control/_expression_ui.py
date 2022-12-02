@@ -1,11 +1,15 @@
-from typing import List, Dict
-import PySimpleGUI as sg
-from pathlib import Path
-from PIL import Image
+import os
 from io import BytesIO
-from loguru import logger
+from pathlib import Path
+from typing import Dict
+
+import PySimpleGUI as sg
 import pyttsx3
+from PIL import Image
+from loguru import logger
+
 from haru_dial_visual_control._phidget_manager import PhidgetDialSensorManager, setup_callbacks
+
 
 _IMAGE_SEQUENCE = {
     "02.gif": "pick what you would like to do",
@@ -39,7 +43,11 @@ def haru_expression_gui():
     setup_callbacks(position=state.next_value, state=state.change_state)
     tts_engine = pyttsx3.init()
 
-    voices = tts_engine.getProperty('voices')
+    if os.name == "nt":
+        tts_engine.setProperty("voice", "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0")
+
+    rate = tts_engine.getProperty('rate')
+    tts_engine.setProperty('rate', rate - 50)
 
     try:
         while True:
