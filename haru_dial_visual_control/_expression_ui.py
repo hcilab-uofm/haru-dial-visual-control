@@ -7,19 +7,19 @@ from loguru import logger
 import pyttsx3
 from haru_dial_visual_control._phidget_manager import PhidgetDialSensorManager, setup_callbacks
 
-_IMAGE_SEQUENCE = {"1-Reward_Visual.gif": "Test one",
-                   "2-tongue_sticking_out.gif": "Test two",
-                   "3-heart_eyes.gif": "Test three",
-                   "4-annoyance.gif": "Test four",
-                   "5-anger.gif": "Test five",
-                   "6-Infuriation.gif": "Test six"}
+_IMAGE_SEQUENCE = {
+    "02.gif": "pick what you would like to do",
+    "07.gif": "pick what you would like to do",
+    "10.gif": "pick what you would like to do",
+    "11.gif": "pick what you would like to do",
+    "16.gif": "pick what you would like to do"
+}
 
 
-_MENU_ITEMS = {"Val 1": "saying one",
-               "Val 2": "saying 2",
-               "Val 3": "saying three",
-               "Val 4": "saying power",
-               "Val 5": "saying moo"}
+_MENU_ITEMS = {"Play a game": "Go outside kido!",
+               "Play with a friend": "You need friends?",
+               "play with a kid nearby": "go outside",
+               "play with parent": "call your mother"}
 
 
 def haru_expression_gui():
@@ -43,7 +43,7 @@ def haru_expression_gui():
 
     try:
         while True:
-            event, values = window.Read(timeout=5)  # every 100ms, fire the event sg.TIMEOUT_KEY
+            event, values = window.Read(timeout=1)  # every 100ms, fire the event sg.TIMEOUT_KEY
 
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 break
@@ -84,6 +84,8 @@ def haru_expression_gui():
                         window["final_text"].update(visible=True)
 
                         window["final_text"].update(value=state.menu_items[state.menu_key()])
+                        tts_engine.say(state.menu_items[state.menu_key()])
+                        tts_engine.runAndWait()
 
             elif event == "Next":
                 state.next_value()
