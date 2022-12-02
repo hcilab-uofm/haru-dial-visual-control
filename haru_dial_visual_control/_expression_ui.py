@@ -12,11 +12,12 @@ from haru_dial_visual_control._phidget_manager import PhidgetDialSensorManager, 
 
 
 _IMAGE_SEQUENCE = {
-    "02.gif": "pick what you would like to do",
-    "07.gif": "pick what you would like to do",
-    "10.gif": "pick what you would like to do",
-    "11.gif": "pick what you would like to do",
-    "16.gif": "pick what you would like to do"
+    "02-saddened.gif":           "pick what you would like to do",
+    "07-sad.gif":                "pick what you would like to do",
+    "10-suprised.gif":           "pick what you would like to do",
+    "11-joy.gif":                "pick what you would like to do",
+    "16-heart-eyes.gif":         "pick what you would like to do",
+    "2-tongue_sticking_out.gif": "Great to see you are feeling playful"
 }
 
 
@@ -28,19 +29,25 @@ _MENU_ITEMS = {"Play a game": "Go outside kido!",
 
 def haru_expression_gui():
     """Launch expressions UI."""
-    menu_items = [[sg.Button(it, font=("Times New Roman", 12),
+    sg.theme("DarkBrown1")
+
+    menu_items = [[sg.Button(it, font=("Times New Roman", 22, "bold"),
                              expand_x=True, expand_y=True, size=(55, 3), key=it),] for it in _MENU_ITEMS.keys()]
 
-    layout = [[sg.Text("Hello.")],
+    layout = [[sg.Text("Hi.\nRotate the dial and press down on the one you like", font=("Times New Roman", 12)), sg.Push(), sg.pin(sg.Button("Restart", key="restart"))],
               [sg.pin(sg.Column(menu_items, visible=False, key="items", element_justification="center")),
-               sg.pin(sg.Text("booooo", font=("Times New Roman", 25), key="final_text", visible=False)),
-               sg.pin(sg.Image(background_color='white', size=(392, 468), key="haru", right_click_menu=["unused", ["Quit", "Next"]]))]
+               sg.pin(sg.Text("booooo", font=("Times New Roman", 55, "bold"), key="final_text", visible=False)),
+               sg.pin(sg.Image(background_color='white', size=(392, 468), key="haru", right_click_menu=["unused", ["Select this", "Next", "Quit"]]))]
               ]
 
-    window = sg.Window("HARU Expressions", size=(530, 600)).Layout(layout)
+    window = sg.Window("HARU Expressions", layout=layout, size=(530, 600), finalize=True)
+
+    # Setting up states, and the pidget sensor
     state = ExpressionsState(_IMAGE_SEQUENCE, _MENU_ITEMS)
     sensor = PhidgetDialSensorManager()
     setup_callbacks(position=state.next_value, state=state.change_state)
+
+    # Configure tts
     tts_engine = pyttsx3.init()
 
     if os.name == "nt":
@@ -49,9 +56,21 @@ def haru_expression_gui():
     rate = tts_engine.getProperty('rate')
     tts_engine.setProperty('rate', rate - 50)
 
+    # Setting up the focus events
+
+    default_button_color = None
+    
+    for item in menu_items:
+        item[0].bind('<FocusIn>', '+FOCUS IN+')
+        item[0].bind('<FocusOut>', '+FOCUS OUT+')
+        default_button_color = item[0].ButtonColor
+
     try:
         while True:
             event, values = window.Read(timeout=1)  # every 100ms, fire the event sg.TIMEOUT_KEY
+
+            if event != sg.TIMEOUT_KEY:
+                logger.debug("Event: {event}, {values}")
 
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 break
@@ -97,6 +116,29 @@ def haru_expression_gui():
 
             elif event == "Next":
                 state.next_value()
+
+            elif event == "restart":
+                state.reset()
+                logger.debug("Restarting process")
+
+            elif event == "Select this":
+                state.change_state()
+                
+            elif event in state.menu_items:
+                window["haru"].update(visible=False)
+                window["items"].update(visible=False)
+                window["final_text"].update(visible=True)
+
+                window["final_text"].update(value=state.menu_items[event])
+                tts_engine.say(state.menu_items[event])
+                tts_engine.runAndWait()
+
+            elif "+FOCUS IN+" in event:
+                window[event.rstrip("+FOCUS IN+")].update(button_color=default_button_color[::-1])
+
+            elif "+FOCUS OUT+" in event:
+                window[event.rstrip("+FOCUS OUT+")].update(button_color=default_button_color)
+
     except:
         logger.exception("UI failed")
     finally:
@@ -139,13 +181,13 @@ class ExpressionsState:
 
         self._value_changed = True
 
-    def get_state_changed(self) -> None:
+    def get_state_changed(self) -> bool:
         """Return if change has happened to state. Resets state if read."""
         ret_val = self._state_changed
         self._state_changed = False
         return ret_val
 
-    def get_value_changed(self) -> None:
+    def get_value_changed(self) -> bool:
         """Return if change has happened to value. Resets state if read."""
         ret_val = self._value_changed
         self._value_changed = False
@@ -166,10 +208,12 @@ class ExpressionsState:
         """Return the key of the current highlight menu."""
         return self.menu_keys[self._current_menu_index]
 
-    def change_state(self) -> None:
+    def change_state(self, state=None) -> None:
         """Change the state."""
         _state = self.state
-        if self.state == "image":
+        if state is not None:
+            self.state = state
+        elif self.state == "image":
             self.state = "menu"
         elif self.state == "menu":
             self.state = "text"
@@ -178,6 +222,9 @@ class ExpressionsState:
 
         if _state != self.state:
             self._state_changed = True
+
+    def reset(self):
+        self.change_state("image")
 
 
 def _image_to_data(im):
