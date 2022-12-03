@@ -1,6 +1,7 @@
 This is a demo application for handling HARU visuals using [phidget dial](https://www.phidgets.com/?tier=3&catid=15&pcid=13&prodid=982)
 
-![demo](media/demo2.gif)
+![demo](media/demo.gif)
+![demo](media/demo2.mp4)
 
 # Installation
 1. Install and configure the phidget sensor. On the product see the `User Guide` tab. Additional examples can be found under the `Code Samples` tab.
