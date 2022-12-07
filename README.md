@@ -12,14 +12,20 @@ This is a demo application for handling HARU visuals using [phidget dial](https:
 pip install https://github.com/hcilab-uofm/haru-dial-visual-control
 ```
 
-# Usage
+or
 
+use the executable in the Release
+
+# Usage
 Note that the application still can be used without the sensor by interacting with the menu items.
 
 1. Start the application by running:
 ```sh
 haru expressions
 ```
+
+or double-click on the downloaded executable.
+
 2. Use the dial to move between animations
    - Use without pidget: right-click and select `Next`
 3. Press down on the dial to toggle between the menu and images
